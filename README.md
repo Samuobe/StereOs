@@ -19,3 +19,47 @@ I have made installation very simple. Just run this command and choose which ver
 ```bash
     curl -LO https://raw.githubusercontent.com/Samuobe/StereOs/main/install.sh && bash install.sh
 ```
+
+## Instruction
+
+[IMMAGINE HOME]
+
+### On the main screen, we see three sections: 
+
+### Top bar
+In the top bar, we have “System” and “Settings.”
+- System: Contains two options: closing StereOs and shutting down the system.
+- Settings: This also has two options: Bluetooth settings and immediate language change.
+
+### Music information
+Every second, this screen updates with new song data. The image shows where the audio is coming from: the Bluetooth symbol for Bluetooth, the Music Assistant symbol for Music Assistant, and a disc symbol for when a CD is inserted.
+
+### Buttons bar
+We have 8 buttons:
+- ⏮️: Previus song
+- ▶️: Restart music
+- ⏸️: Pause music
+- ⏭️: Next song
+- 🔊: Volume up
+- 💿: Eject the disk
+- 📱/📵: Enable/Disable bluetooth (📱=Enable | 📵=Disable)
+- 🔉: Volume down
+## Screenshots
+## Contribute
+Contributions are welcome! Especially with the language, to contribute you need to fork the repository, modify it, and send a pull request.
+
+### Language contribute
+Contributing to the language is easy. First, clone the repository, then:
+1) Check if a file for your language already exists. If not, create it in the “lpak” subfolder and name it using the language name in that language + .lpak. For example, the Italian language is “Italiano” in Italian and ‘Italian’ in English, so I will name the file “Italiano.lpak.”
+2) Take the missing entries from the “English.lpak” file and copy them into it.
+3) Replace ONLY THE WORDS AFTER THE PIPE SYMBOL (|), that will be the translation.
+4) Send the pull request and wait for approval!
+
+If there are any problems, don't hesitate to open an issue!
+
+### Suggestions, requests, bugs
+For any reports, problems, requests, or suggestions, please use GitHub issues, or feel free to fork and fix! It's best to let us know first, so we don't accidentally work on the same thing!
+
+
+## Contact
+You can contact me via GitHub issues, or by email at samuobe@outlook.com.
