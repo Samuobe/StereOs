@@ -13,7 +13,7 @@ md5sums=('SKIP')
 package() {
     # Copia tutto il progetto in /usr/share/stereos
     install -d "$pkgdir/usr/share/stereos"
-    cp -r "$srcdir/StereOS-$pkgver/"* "$pkgdir/usr/share/stereos/"
+    cp -r "$srcdir/StereOs-$pkgver/"* "$pkgdir/usr/share/stereos/"
 
 
     # Launcher in /usr/bin
@@ -23,14 +23,14 @@ exec python3 /usr/share/stereos/main.py "$@"
 EOF
 
     # Icona
-    if [[ -f "$srcdir/StereOS-$pkgver/icons/stereos.png" ]]; then
-        install -Dm644 "$srcdir/StereOS-$pkgver/icons/stereos.png" \
+    if [[ -f "$srcdir/StereOs-$pkgver/icons/stereos.png" ]]; then
+        install -Dm644 "$srcdir/StereOs-$pkgver/icons/stereos.png" \
             "$pkgdir/usr/share/pixmaps/stereos.png"
     fi
 
     # File desktop
-    if [[ -f "$srcdir/StereOS-$pkgver/stereos.desktop" ]]; then
-        install -Dm644 "$srcdir/StereOS-$pkgver/stereos.desktop" \
+    if [[ -f "$srcdir/StereOs-$pkgver/stereos.desktop" ]]; then
+        install -Dm644 "$srcdir/StereOs-$pkgver/stereos.desktop" \
             "$pkgdir/usr/share/applications/stereos.desktop"
     fi
 

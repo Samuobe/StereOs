@@ -23,7 +23,7 @@ if [[ "$action" == "1" ]]; then
         sudo pacman -Rns stereos-dev-git
         wget https://raw.githubusercontent.com/samuobe/StereOs/main/PKGBUILD/PKGBUILD
         makepkg -si
-        rm PKGBUILD
+        #rm PKGBUILD
         echo "FINISHED!"       
     else
         echo "Installing StereOs from main branch (beta)..."       
@@ -37,7 +37,7 @@ if [[ "$action" == "1" ]]; then
     fi
 
     cd ..
-    rm -rf stereos-install
+    #rm -rf stereos-install
 
 elif [[ "$action" == "2" ]]; then
     echo
