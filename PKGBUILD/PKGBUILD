@@ -19,6 +19,7 @@ package() {
     # Launcher in /usr/bin
     install -Dm755 /dev/stdin "$pkgdir/usr/bin/stereos" <<'EOF'
 #!/bin/sh
+cd /usr/share/stereos
 exec python3 /usr/share/stereos/main.py "$@"
 EOF
 

@@ -7,57 +7,64 @@ pkgdesc="An app that turns your PC into a stereo system"
 arch=('any')
 url="https://github.com/Samuobe/StereOs"
 license=('GPL3')
+
+# Dipendenze di sistema
 depends=(
     'python'
-    'python-pyqt6'
-    'python-pyside6'
-    'python-flask'
-    'python-requests'
-    'python-pyalsaaudio'
-
     'vlc'
     'curl'
-    'eject'
-    'playerctl'
-    'pulseaudio'
-    'bluez'
-    'blueman'
-    'rfkill'
-    'espeak-ng'
     'cdrtools'
+    'playerctl'
+    'bluez'
+    'rfkill'
     'pipewire'
     'wireplumber'
+    'pulseaudio'
+    'blueman'
+    'espeak-ng'
 )
-makedepends=('git' 'python-setuptools')
+
+# Dipendenze per la compilazione
+makedepends=('git' 'python-setuptools' 'python-pip')
+
+# Fonte
 source=("git+$url.git")
 md5sums=('SKIP')
 
+# Versione basata sul tag git
 pkgver() {
-    cd "$srcdir/StereOS"
+    cd "$srcdir/StereOs"
     git describe --tags --always | sed 's/^v//;s/-/./g'
 }
 
 package() {
     # Copia tutto il progetto in /usr/share/stereos
     install -d "$pkgdir/usr/share/stereos"
-    cp -r "$srcdir/StereOS/"* "$pkgdir/usr/share/stereos/"
+    cp -r "$srcdir/StereOs/"* "$pkgdir/usr/share/stereos/"
+
+    # Directory dati globale
+    install -dm1777 "$pkgdir/var/lib/stereos"
 
     # Launcher in /usr/bin
-    install -Dm755 /dev/stdin "$pkgdir/usr/bin/stereos" <<EOF
+    install -Dm755 /dev/stdin "$pkgdir/usr/bin/stereos" <<'EOF'
 #!/bin/sh
-exec python3 /usr/share/stereos/main.py "\$@"
+cd /usr/share/stereos
+exec python3 /usr/share/stereos/main.py "$@"
 EOF
 
-    # Icona (richiede StereOS/icons/stereos.png)
-    if [[ -f "$srcdir/StereOS/icons/stereos.png" ]]; then
-        install -Dm644 "$srcdir/StereOS/icons/stereos.png" \
+    # Icona (se esiste)
+    if [[ -f "$srcdir/StereOs/icons/stereos.png" ]]; then
+        install -Dm644 "$srcdir/StereOs/icons/stereos.png" \
             "$pkgdir/usr/share/icons/hicolor/512x512/apps/stereos.png"
     fi
 
-    # File desktop (richiede StereOS/stereos.desktop)
-    if [[ -f "$srcdir/StereOS/stereos.desktop" ]]; then
-        install -Dm644 "$srcdir/StereOS/stereos.desktop" \
+    # File desktop (se esiste)
+    if [[ -f "$srcdir/StereOs/stereos.desktop" ]]; then
+        install -Dm644 "$srcdir/StereOs/stereos.desktop" \
             "$pkgdir/usr/share/applications/stereos.desktop"
     fi
 
+    # Installazione dipendenze Python via pip
+    pip install --root="$pkgdir" --prefix=/usr \
+        Flask requests PySide6 pyalsaaudio
 }
