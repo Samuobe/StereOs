@@ -42,9 +42,6 @@ package() {
     install -d "$pkgdir/usr/share/stereos"
     cp -r "$srcdir/StereOS/"* "$pkgdir/usr/share/stereos/"
 
-    # Directory dati globale
-    install -dm1777 "$pkgdir/var/lib/stereos"
-
     # Launcher in /usr/bin
     install -Dm755 /dev/stdin "$pkgdir/usr/bin/stereos" <<EOF
 #!/bin/sh

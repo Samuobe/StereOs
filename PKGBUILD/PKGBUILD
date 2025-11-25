@@ -1,0 +1,42 @@
+# Maintainer: Samuobe <samuobe@ik.me>
+
+pkgname=StereOs
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="An app that turns your PC into a stereo"
+arch=('any')
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyqt6')
+source=("https://github.com/Samuobe/Arch-Store/archive/refs/tags/v0.0.1.tar.gz")  # Inserisci qui il link alla sorgente
+md5sums=('SKIP')
+
+package() {
+    # Copia tutto il progetto in /usr/share/stereos
+    install -d "$pkgdir/usr/share/stereos"
+    cp -r "$srcdir/StereOS-$pkgver/"* "$pkgdir/usr/share/stereos/"
+
+
+    # Launcher in /usr/bin
+    install -Dm755 /dev/stdin "$pkgdir/usr/bin/stereos" <<'EOF'
+#!/bin/sh
+exec python3 /usr/share/stereos/main.py "$@"
+EOF
+
+    # Icona
+    if [[ -f "$srcdir/StereOS-$pkgver/icons/stereos.png" ]]; then
+        install -Dm644 "$srcdir/StereOS-$pkgver/icons/stereos.png" \
+            "$pkgdir/usr/share/pixmaps/stereos.png"
+    fi
+
+    # File desktop
+    if [[ -f "$srcdir/StereOS-$pkgver/stereos.desktop" ]]; then
+        install -Dm644 "$srcdir/StereOS-$pkgver/stereos.desktop" \
+            "$pkgdir/usr/share/applications/stereos.desktop"
+    fi
+
+    # Versione stabile
+    install -Dm644 /dev/null "$pkgdir/usr/share/stereos/stable"
+
+    # Flag per AUR
+    install -Dm644 /dev/null "$pkgdir/usr/share/stereos/AUR"
+}
