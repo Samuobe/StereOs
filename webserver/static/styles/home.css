@@ -1,0 +1,83 @@
+/* Impostazioni base per schermo intero */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e1e2f, #2e2e48);
+    color: #f0f0f0;
+}
+
+/* Contenitore principale centrato */
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Titolo */
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: #ffffff;
+    text-shadow: 1px 1px 5px #00000066;
+}
+
+/* Box informazioni */
+div {
+    background-color: #2b2b3c;
+    padding: 1.5rem 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px #00000033;
+    margin-bottom: 2rem;
+    text-align: center;
+    line-height: 1.8;
+    min-width: 280px;
+}
+
+/* Etichette */
+strong {
+    color: #86e1ff;
+}
+
+/* Form con pulsanti */
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* Pulsanti */
+button {
+    font-size: 1.6rem;
+    background-color: #3d3d5c;
+    color: white;
+    border: none;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+button:hover {
+    background-color: #50507a;
+    transform: scale(1.05);
+}
+
+button:active {
+    background-color: #7070a0;
+    transform: scale(0.98);
+}
+
+/* Responsive padding */
+@media (max-width: 480px) {
+    body {
+        padding: 1rem;
+    }
+
+    div {
+        width: 100%;
+    }
+}

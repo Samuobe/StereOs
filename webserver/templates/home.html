@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="it" dir="ltr">
+    <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/home.css') }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">   
+        <title>Stereo Controller</title>
+        <meta http-equiv="refresh" content="2">
+    </head>
+    <body>
+        <h1>Controllo dello stereo</h1>
+        <div>
+            <strong>Titolo:</strong> {{ title }}<br>
+            <strong>Artista:</strong> {{ artist }}<br>
+            <strong>Album:</strong> {{ album }}
+        </div>
+        <form action="/execute" method="post">    
+            <button type="submit" name="action" value="previous_song">⏮️</button>  
+            <button type="submit" name="action" value="play_or_pause">⏯️</button>      
+            <button type="submit" name="action" value="next_song">⏭️</button>          
+            <button type="submit" name="action" value="volume_down">🔉</button>
+            <button type="submit" name="action" value="volume_up">🔊</button>
+            <button type="submit" name="action" value="eject_disk">💿</button>
+            
+        </form>
+        <!-- Player YouTube invisibile -->
+        <iframe id="ytplayer" type="text/html" width="0" height="0"
+            src="https://www.youtube.com/embed/{{ youtube_id }}?autoplay=1&controls=0"
+            frameborder="0" allow="autoplay">
+        </iframe>
+    </body>
+</html>

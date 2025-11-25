@@ -1,0 +1,16 @@
+def get(word, language):
+    
+    line_found = []
+
+    with open(f"lpak/{language}.lpak", "r") as file:        
+        for line in file:
+                try:
+                    parts = line.split("|", 1) 
+                except:
+                    continue             
+                
+                key, value = parts[0].strip(), parts[1].strip()                
+              
+                if key == word:
+                    return str(value)                
+    return word
