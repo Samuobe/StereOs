@@ -540,7 +540,7 @@ def change_language(new_language):
     global language
     language = new_language
     generate_menu(menu_bar)
-    with open("./stereos.conf", "w") as f:
+    with open(data_dir+"stereos.conf", "w") as f:
         f.write("Language="+new_language)
 def bluetooth_settings():
     os.system("blueman-manager &") 
