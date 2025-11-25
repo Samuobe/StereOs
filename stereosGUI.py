@@ -12,6 +12,7 @@ import time
 
 
 #Global vars
+data_dir = "/var/lib/stereos/"
 data_title_styles = None
 data_data_styles = None
 remote_control_style_label = None
@@ -42,8 +43,16 @@ for lang in avaible_languages_temp:
     avaible_languages.append(lang.split("/")[2].split(".")[0])
 
 def load_config():
-    global language, bluetooth_default
-    with open("./stereos.conf") as f:
+    global language, bluetooth_default, data_dir
+    config_file = data_dir+"stereos.conf"
+
+    # Check if the file exists and is a file
+    if not os.path.isfile(config_file):
+        with open(config_file, "w") as f:
+            f.write("Language=English\n")
+            f.write("BluetoothDefault=Off")
+
+    with open(config_file) as f:
         data = f.readlines()
     language = data[0].split("=")[1].strip()
     bluetooth_default =data[1].split("=")[1].strip()
