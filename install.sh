@@ -19,16 +19,16 @@ if [[ "$action" == "1" ]]; then
 
     if [[ "$choice" =~ ^[Yy]$ ]]; then
         echo "Installing StereOs stable..."
-        sudo pacman -Rns stereos-git
-        sudo pacman -Rns stereos-dev-git
+        sudo pacman -Rns StereOs-git
+        sudo pacman -Rns StereOs-dev-git
         wget https://raw.githubusercontent.com/samuobe/StereOs/main/PKGBUILD/PKGBUILD
         makepkg -si
         rm PKGBUILD
         echo "FINISHED!"       
     else
         echo "Installing StereOs from main branch (beta)..."       
-        sudo pacman -Rns stereos-dev-git 
-        sudo pacman -Rns stereos
+        sudo pacman -Rns StereOs-dev-git 
+        sudo pacman -Rns StereOs
         wget https://raw.githubusercontent.com/samuobe/StereOs/main/PKGBUILD/PKGBUILD-git
         mv PKGBUILD-git PKGBUILD
         makepkg -si        
@@ -43,9 +43,9 @@ elif [[ "$action" == "2" ]]; then
     echo
     echo
     echo "Uninstalling StereOs..."
-    sudo pacman -Rns stereos
-    sudo pacman -Rns stereos-git
-    sudo pacman -Rns stereos-dev-git
+    sudo pacman -Rns StereOs
+    sudo pacman -Rns StereOs-git
+    sudo pacman -Rns StereOs-dev-git
     echo "FINISHED!"
 elif [[ "$action" == "5" ]]; then
     mkdir stereos-install
@@ -53,8 +53,8 @@ elif [[ "$action" == "5" ]]; then
     PYTHON_PATH=$(which python3)
 
     echo "Installing StereOs DEV branch..."
-    sudo pacman -Rns stereos 
-    sudo pacman -Rns stereos-git
+    sudo pacman -Rns StereOs 
+    sudo pacman -Rns StereOs-git
     wget https://raw.githubusercontent.com/samuobe/StereOs/main/PKGBUILD/PKGBUILD-dev
     mv PKGBUILD-dev PKGBUILD
     makepkg -si
