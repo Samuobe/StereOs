@@ -1,7 +1,7 @@
 # Maintainer: Samuobe <samuobe@ik.me>
 
 pkgname=StereOs
-pkgver=0.0.1
+pkgver=0.0.2
 pkgrel=1
 pkgdesc="An app that turns your PC into a stereo"
 arch=('any')
