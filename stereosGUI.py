@@ -46,16 +46,24 @@ def load_config():
     global language, bluetooth_default, data_dir
     config_file = data_dir+"stereos.conf"
 
-    # Check if the file exists and is a file
-    if not os.path.isfile(config_file):
+    def generate_new_config_file(config_file):
         with open(config_file, "w") as f:
             f.write("Language=English\n")
             f.write("BluetoothDefault=Off")
+    
+    # Check if the file exists and is a file
+    if not os.path.isfile(config_file):
+        generate_new_config_file(config_file)
 
     with open(config_file) as f:
         data = f.readlines()
-    language = data[0].split("=")[1].strip()
-    bluetooth_default =data[1].split("=")[1].strip()
+    print(data)
+    try:
+        language = data[0].split("=")[1].strip()
+        bluetooth_default =data[1].split("=")[1].strip()
+    except:
+        generate_new_config_file(config_file)
+
 
 
 def def_styles():
