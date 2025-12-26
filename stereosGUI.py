@@ -194,20 +194,20 @@ def update_data():
                 "release_id": release["id"]
             }
 
-            def get_cover_url(release_id):
-                url = f"https://coverartarchive.org/release/{release_id}"
-                r = requests.get(url)
+        def get_cover_url(release_id):
+            url = f"https://coverartarchive.org/release/{release_id}"
+            r = requests.get(url)
 
-                if r.status_code != 200:
-                    return None
-
-                data = r.json()
-
-                for img in data["images"]:
-                    if img.get("front"):
-                        return img["image"]  # URL immagine
-
+            if r.status_code != 200:
                 return None
+
+            data = r.json()
+
+            for img in data["images"]:
+                if img.get("front"):
+                    return img["image"]  # URL immagine
+
+            return None
         brano = cerca_brano(
             titolo="White Wolf",
             artista="Roses of Thieves",
