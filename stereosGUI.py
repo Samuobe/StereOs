@@ -327,40 +327,42 @@ def update_data():
             cover = subprocess.run(["playerctl", "metadata", "mpris:artUrl"],
                                 capture_output=True, text=True)
             path = cover.stdout.strip()
-
+            
             if not path:  # se non c'è nulla in riproduzione
                 raise ValueError("Nessuna cover trovata")
 
-            if path.startswith("file://"):
-                path = path.replace("file://", "")
-                
-
-            if path.startswith("http"):
+            path = get_cover_web(artist, title, album)
+            if path.startswith("http") and path != "":
                 response = requests.get(path)
                 if response.status_code == 200:
                     cover_pixmap.loadFromData(response.content)
-                    copertina = "File_web"
-            else:
-                copertina = "File"
-                cover_pixmap.load(path)
+                    copertina = "From_API"
+                else:
+                    
+
+                    if path.startswith("file://"):
+                        path = path.replace("file://", "")
+                        
+
+                    if path.startswith("http"):
+                        response = requests.get(path)
+                        if response.status_code == 200:
+                            cover_pixmap.loadFromData(response.content)
+                            copertina = "File_web"
+                    else:
+                        copertina = "File"
+                        cover_pixmap.load(path)
 
         except Exception:
             if copertina == "No data":
                 default_path = os.path.join(os.path.dirname(__file__), "icons/no_media.png")
                 copertina = "No data"
             else:
-                #cerca online, altrimenti default
-                path = get_cover_web(artist, title, album)
-                if path.startswith("http") and path != "":
-                    response = requests.get(path)
-                    if response.status_code == 200:
-                        cover_pixmap.loadFromData(response.content)
-                        copertina = "From_API"
-                else:
-                    path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
-                    copertina = "Default CD"
-                    cover_pixmap.load(path)
-                    default_image_status = True
+                        
+                path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
+                copertina = "Default CD"
+                cover_pixmap.load(path)
+                default_image_status = True
     else:
         if copertina == "Music Assistant":
             path = os.path.join(os.path.dirname(__file__), "icons/music_assistant.png")
