@@ -328,8 +328,7 @@ def update_data():
                                 capture_output=True, text=True)
             path = cover.stdout.strip()
             
-            if not path:  # se non c'è nulla in riproduzione
-                raise ValueError("Nessuna cover trovata")
+            
 
             path = get_cover_web(artist, title, album)
             if path.startswith("http") and path != "":
@@ -338,6 +337,8 @@ def update_data():
                     cover_pixmap.loadFromData(response.content)
                     copertina = "From_API"
                 else:
+                    if not path:  # se non c'è nulla in riproduzione
+                        raise ValueError("Nessuna cover trovata")
                     
 
                     if path.startswith("file://"):
