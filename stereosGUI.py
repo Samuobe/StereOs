@@ -1,7 +1,7 @@
 import PyQt6.QtWidgets as pq
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap, QTransform, QPainter, QPainterPath
-from PySide6 import QtCore
+from PyQt6 import QtCore
 import sys
 import subprocess
 import os
@@ -9,8 +9,13 @@ import library.lpak as lpak
 import glob
 import threading
 import time
-import requests
+
 import musicbrainzngs
+import requests
+
+from PyQt6.QtWidgets import QGraphicsOpacityEffect, QGraphicsBlurEffect
+from PyQt6.QtCore import QPropertyAnimation
+
 
 
 #Global vars
@@ -35,9 +40,18 @@ status = None
 cover_pixmap = None
 old_copertina = None
 bluetooth_default = None
-scaled_cover_pixmap = None
 current_angle = 0
 copertina = "Get"
+
+background_label = None
+background_opacity = None
+background_anim = None
+
+BASE_BACKGROUND = os.path.join(
+    os.path.dirname(__file__),
+    "icons/background_base.png"
+)
+
 
 #Auto set variable
 avaible_languages_temp = glob.glob(f"./lpak/*.lpak")
@@ -109,6 +123,67 @@ def def_styles():
             }
         """
 
+
+def set_background_with_fade(pixmap, blur_radius=35, duration=600):
+    """
+    Imposta lo sfondo del main window con blur e animazione fade-in.
+    """
+    global background_label, background_opacity, background_anim, root
+
+    if pixmap.isNull() or root is None:
+        return
+
+    win_size = root.size()
+
+    # scala senza stretch
+    bg = pixmap.scaled(
+        win_size,
+        Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+        Qt.TransformationMode.SmoothTransformation
+    )
+
+    # crop centrale
+    x = (bg.width() - win_size.width()) // 2
+    y = (bg.height() - win_size.height()) // 2
+    bg = bg.copy(x, y, win_size.width(), win_size.height())
+
+    # creazione QLabel per lo sfondo se non esiste
+    if background_label is None:
+        background_label = pq.QLabel(root)
+        background_label.setGeometry(0, 0, win_size.width(), win_size.height())
+        background_label.lower()
+
+        # overlay scuro semi-trasparente
+        background_label.setStyleSheet("QLabel { background-color: rgba(0, 0, 0, 120); }")
+
+        # effetto blur
+        blur = QGraphicsBlurEffect()
+        blur.setBlurRadius(blur_radius)
+        background_label.setGraphicsEffect(blur)
+
+        # effetto opacità per fade-in
+        background_opacity = QGraphicsOpacityEffect()
+        background_label.setGraphicsEffect(background_opacity)
+        background_opacity.setOpacity(0.0)
+
+    # aggiorna pixmap
+    background_label.setPixmap(bg)
+
+    # animazione fade-in
+    if background_opacity is not None:
+        background_anim = QPropertyAnimation(background_opacity, b"opacity")
+        background_anim.setDuration(duration)
+        background_anim.setStartValue(0.0)
+        background_anim.setEndValue(1.0)
+        background_anim.start()
+
+
+def set_base_background():
+    pixmap = QPixmap(BASE_BACKGROUND)
+    if not pixmap.isNull():
+        set_background_with_fade(pixmap)
+
+
 def generate_data_interface():
     global data_layout, label_cover
     global label_title_artist, label_title_title, label_title_album, label_title_status
@@ -162,71 +237,6 @@ def generate_data_interface():
     root.repaint()
 
 def update_data():
-    def get_cover_web(artist, title, album):
-        musicbrainzngs.set_useragent(
-            "SonneMusic",      
-            "1.0",
-            "https://github.com/Samuobe/StereOs"
-        )
-
-        def cerca_brano(titolo, artista=None, album=None):
-            query = titolo
-            if artista:
-                query += f' AND artist:"{artista}"'
-            if album:
-                query += f' AND release:"{album}"'
-
-            result = musicbrainzngs.search_recordings(
-                query=query,
-                limit=1
-            )
-
-            if not result["recording-list"]:
-                return None
-
-            recording = result["recording-list"][0]
-
-            release = recording["release-list"][0]
-            
-            return {
-                "titolo": recording["title"],
-                "artista": recording["artist-credit"][0]["artist"]["name"],
-                "album": release["title"],
-                "release_id": release["id"]
-            }
-
-        def get_cover_url(release_id):
-            url = f"https://coverartarchive.org/release/{release_id}"
-            r = requests.get(url)
-
-            if r.status_code != 200:
-                return None
-
-            data = r.json()
-
-            for img in data["images"]:
-                if img.get("front"):
-                    return img["image"]  # URL immagine
-
-            return None
-        brano = cerca_brano(
-            titolo="White Wolf",
-            artista="Roses of Thieves",
-            album="Demons Ascend"
-        )
-
-        if brano:
-            cover_url = get_cover_url(brano["release_id"])
-            
-            print("Titolo:", brano["titolo"])
-            print("Artista:", brano["artista"])
-            print("Album:", brano["album"])
-            print("Copertina:", cover_url)
-
-            return cover_url
-        else:
-            return("")
-    
     global data_layout, label_cover
     global label_title_artist, label_title_title, label_title_album, label_title_status
     global label_data_artist, label_data_title, label_data_album, label_data_status
@@ -327,43 +337,32 @@ def update_data():
             cover = subprocess.run(["playerctl", "metadata", "mpris:artUrl"],
                                 capture_output=True, text=True)
             path = cover.stdout.strip()
-            
-            
 
-            path = get_cover_web(artist, title, album)
-            if path.startswith("http") and path != "":
+            if not path:  # se non c'è nulla in riproduzione
+                raise ValueError("Nessuna cover trovata")
+
+            if path.startswith("file://"):
+                path = path.replace("file://", "")
+                
+
+            if path.startswith("http"):
                 response = requests.get(path)
                 if response.status_code == 200:
                     cover_pixmap.loadFromData(response.content)
-                    copertina = "From_API"
-                else:
-                    if not path:  # se non c'è nulla in riproduzione
-                        raise ValueError("Nessuna cover trovata")
-                    
-
-                    if path.startswith("file://"):
-                        path = path.replace("file://", "")
-                        
-
-                    if path.startswith("http"):
-                        response = requests.get(path)
-                        if response.status_code == 200:
-                            cover_pixmap.loadFromData(response.content)
-                            copertina = "File_web"
-                    else:
-                        copertina = "File"
-                        cover_pixmap.load(path)
+                    copertina = "File_web"
+            else:
+                copertina = "File"
+                cover_pixmap.load(path)
 
         except Exception:
             if copertina == "No data":
                 default_path = os.path.join(os.path.dirname(__file__), "icons/no_media.png")
                 copertina = "No data"
             else:
-                        
-                path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
+                default_path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
                 copertina = "Default CD"
-                cover_pixmap.load(path)
-                default_image_status = True
+            cover_pixmap.load(default_path)
+            default_image_status = True
     else:
         if copertina == "Music Assistant":
             path = os.path.join(os.path.dirname(__file__), "icons/music_assistant.png")
@@ -388,6 +387,107 @@ def update_data():
         cover_pixmap = scaled_cover_pixmap
         label_cover.setPixmap(scaled_cover_pixmap)
     
+
+    #background
+    def get_background(title, artist, album):       
+
+        musicbrainzngs.set_useragent(
+            "SonneMusic",      # nome app (perfetto per il tuo progetto 😉)
+            "1.0",
+            "https://github.com/Samuobe/StereOs"
+        )
+
+        def cerca_brano(titolo, artista=None, album=None):
+            query = titolo
+            if artista:
+                query += f' AND artist:"{artista}"'
+            if album:
+                query += f' AND release:"{album}"'
+
+            result = musicbrainzngs.search_recordings(
+                query=query,
+                limit=1
+            )
+
+            if not result["recording-list"]:
+                return None
+
+            recording = result["recording-list"][0]
+
+            release = recording["release-list"][0]
+            
+            return {
+                "titolo": recording["title"],
+                "artista": recording["artist-credit"][0]["artist"]["name"],
+                "album": release["title"],
+                "release_id": release["id"]
+            }
+
+
+        import requests
+
+        def get_cover_url(release_id):
+            url = f"https://coverartarchive.org/release/{release_id}"
+            r = requests.get(url)
+
+            if r.status_code != 200:
+                return None
+
+            data = r.json()
+
+            for img in data["images"]:
+                if img.get("front"):
+                    return img["image"]  # URL immagine
+
+            return None
+
+
+        brano = cerca_brano(
+            titolo=title,
+            artista=artist,
+            album=album
+        )
+
+        if brano:
+            cover_url = get_cover_url(brano["release_id"])
+            
+            print("Titolo:", brano["titolo"])
+            print("Artista:", brano["artista"])
+            print("Album:", brano["album"])
+            print("Copertina:", cover_url)
+
+            return cover_url
+        else:
+            print("Brano non trovato")
+            return ("")
+
+   
+    if copertina != old_copertina:
+      
+        background_url = get_background(title, artist, album)
+        bg_key = f"{artist}-{album}"
+   
+
+        if background_url and bg_key != current_background_key:
+            try:
+                r = requests.get(background_url, timeout=5)
+                if r.status_code == 200:
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(r.content)
+
+                    if not pixmap.isNull():
+                        set_background_with_fade(pixmap)
+                        current_background_key = bg_key
+                        return
+            except Exception as e:
+                print("Errore background web:", e)
+
+        # fallback smooth
+        if current_background_key != "base":
+            set_base_background()
+            current_background_key = "base"
+
+
         
 
 
@@ -522,6 +622,7 @@ app = pq.QApplication(sys.argv)
 root = pq.QMainWindow()
 root.showFullScreen()
 #root.showMaximized()
+set_base_background()
 
 #Update data timer 
 timer_data = QtCore.QTimer()
