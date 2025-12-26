@@ -35,6 +35,7 @@ status = None
 cover_pixmap = None
 old_copertina = None
 bluetooth_default = None
+scaled_cover_pixmap = None
 current_angle = 0
 copertina = "Get"
 
@@ -354,12 +355,12 @@ def update_data():
                     response = requests.get(path)
                     if response.status_code == 200:
                         cover_pixmap.loadFromData(response.content)
-                        copertina = "File_web"
+                        copertina = "From_API"
                 else:
                     path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
                     copertina = "Default CD"
-            cover_pixmap.load(path)
-            default_image_status = True
+                    cover_pixmap.load(path)
+                    default_image_status = True
     else:
         if copertina == "Music Assistant":
             path = os.path.join(os.path.dirname(__file__), "icons/music_assistant.png")
