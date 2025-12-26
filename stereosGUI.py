@@ -9,6 +9,8 @@ import library.lpak as lpak
 import glob
 import threading
 import time
+import requests
+import musicbrainzngs
 
 
 #Global vars
@@ -159,6 +161,71 @@ def generate_data_interface():
     root.repaint()
 
 def update_data():
+    def get_cover_web(artist, title, album):
+        musicbrainzngs.set_useragent(
+            "SonneMusic",      
+            "1.0",
+            "https://github.com/Samuobe/StereOs"
+        )
+
+        def cerca_brano(titolo, artista=None, album=None):
+            query = titolo
+            if artista:
+                query += f' AND artist:"{artista}"'
+            if album:
+                query += f' AND release:"{album}"'
+
+            result = musicbrainzngs.search_recordings(
+                query=query,
+                limit=1
+            )
+
+            if not result["recording-list"]:
+                return None
+
+            recording = result["recording-list"][0]
+
+            release = recording["release-list"][0]
+            
+            return {
+                "titolo": recording["title"],
+                "artista": recording["artist-credit"][0]["artist"]["name"],
+                "album": release["title"],
+                "release_id": release["id"]
+            }
+
+            def get_cover_url(release_id):
+                url = f"https://coverartarchive.org/release/{release_id}"
+                r = requests.get(url)
+
+                if r.status_code != 200:
+                    return None
+
+                data = r.json()
+
+                for img in data["images"]:
+                    if img.get("front"):
+                        return img["image"]  # URL immagine
+
+                return None
+        brano = cerca_brano(
+            titolo="White Wolf",
+            artista="Roses of Thieves",
+            album="Demons Ascend"
+        )
+
+        if brano:
+            cover_url = get_cover_url(brano["release_id"])
+            
+            print("Titolo:", brano["titolo"])
+            print("Artista:", brano["artista"])
+            print("Album:", brano["album"])
+            print("Copertina:", cover_url)
+
+            return cover_url
+        else:
+            return("")
+    
     global data_layout, label_cover
     global label_title_artist, label_title_title, label_title_album, label_title_status
     global label_data_artist, label_data_title, label_data_album, label_data_status
@@ -282,11 +349,16 @@ def update_data():
                 copertina = "No data"
             else:
                 #cerca online, altrimenti default
-                
-
-                default_path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
-                copertina = "Default CD"
-            cover_pixmap.load(default_path)
+                path = get_cover_web(artist, title, album)
+                if path.startswith("http") and path != "":
+                    response = requests.get(path)
+                    if response.status_code == 200:
+                        cover_pixmap.loadFromData(response.content)
+                        copertina = "File_web"
+                else:
+                    path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
+                    copertina = "Default CD"
+            cover_pixmap.load(path)
             default_image_status = True
     else:
         if copertina == "Music Assistant":
