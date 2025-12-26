@@ -281,6 +281,9 @@ def update_data():
                 default_path = os.path.join(os.path.dirname(__file__), "icons/no_media.png")
                 copertina = "No data"
             else:
+                #cerca online, altrimenti default
+                
+
                 default_path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
                 copertina = "Default CD"
             cover_pixmap.load(default_path)
