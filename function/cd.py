@@ -13,6 +13,7 @@ def start_cd():
         '--telnet-password ciao '
         '--telnet-port 4212'
     )
+    os.system("systemctl --user start mpris-scrobbler.service")
 
 def stop_cd():
     def kill():
@@ -26,4 +27,5 @@ def stop_cd():
             '--telnet-password ciao '
             '--telnet-port 4212'
         )
+        os.system("systemctl --user stop mpris-scrobbler.service")
     threading.Thread(target=kill, daemon=True).start()

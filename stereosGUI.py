@@ -124,66 +124,6 @@ def def_styles():
         """
 
 
-def set_background_with_fade(pixmap, blur_radius=35, duration=600):
-    """
-    Imposta lo sfondo del main window con blur e animazione fade-in.
-    """
-    global background_label, background_opacity, background_anim, root
-
-    if pixmap.isNull() or root is None:
-        return
-
-    win_size = root.size()
-
-    # scala senza stretch
-    bg = pixmap.scaled(
-        win_size,
-        Qt.AspectRatioMode.KeepAspectRatioByExpanding,
-        Qt.TransformationMode.SmoothTransformation
-    )
-
-    # crop centrale
-    x = (bg.width() - win_size.width()) // 2
-    y = (bg.height() - win_size.height()) // 2
-    bg = bg.copy(x, y, win_size.width(), win_size.height())
-
-    # creazione QLabel per lo sfondo se non esiste
-    if background_label is None:
-        background_label = pq.QLabel(root)
-        background_label.setGeometry(0, 0, win_size.width(), win_size.height())
-        background_label.lower()
-
-        # overlay scuro semi-trasparente
-        background_label.setStyleSheet("QLabel { background-color: rgba(0, 0, 0, 120); }")
-
-        # effetto blur
-        blur = QGraphicsBlurEffect()
-        blur.setBlurRadius(blur_radius)
-        background_label.setGraphicsEffect(blur)
-
-        # effetto opacità per fade-in
-        background_opacity = QGraphicsOpacityEffect()
-        background_label.setGraphicsEffect(background_opacity)
-        background_opacity.setOpacity(0.0)
-
-    # aggiorna pixmap
-    background_label.setPixmap(bg)
-
-    # animazione fade-in
-    if background_opacity is not None:
-        background_anim = QPropertyAnimation(background_opacity, b"opacity")
-        background_anim.setDuration(duration)
-        background_anim.setStartValue(0.0)
-        background_anim.setEndValue(1.0)
-        background_anim.start()
-
-
-def set_base_background():
-    pixmap = QPixmap(BASE_BACKGROUND)
-    if not pixmap.isNull():
-        set_background_with_fade(pixmap)
-
-
 def generate_data_interface():
     global data_layout, label_cover
     global label_title_artist, label_title_title, label_title_album, label_title_status
@@ -293,7 +233,7 @@ def update_data():
             label_data_artist.setText(artist)
             label_data_title.setText(title)
             label_data_album.setText(album)
-            label_data_status.setText(status)
+            label_data_status.setText(lpak.get(status, language))
 
             label_title_artist.setStyleSheet(data_title_styles)
             label_title_title.setStyleSheet(data_title_styles)
@@ -388,42 +328,6 @@ def update_data():
         label_cover.setPixmap(scaled_cover_pixmap)
     
 
-    #background
-    def get_background(title, artist, album):       
-
-        musicbrainzngs.set_useragent(
-            "SonneMusic",      # nome app (perfetto per il tuo progetto 😉)
-            "1.0",
-            "https://github.com/Samuobe/StereOs"
-        )
-
-        def cerca_brano(titolo, artista=None, album=None):
-            query = titolo
-            if artista:
-                query += f' AND artist:"{artista}"'
-            if album:
-                query += f' AND release:"{album}"'
-
-            result = musicbrainzngs.search_recordings(
-                query=query,
-                limit=1
-            )
-
-            if not result["recording-list"]:
-                return None
-
-            recording = result["recording-list"][0]
-
-            release = recording["release-list"][0]
-            
-            return {
-                "titolo": recording["title"],
-                "artista": recording["artist-credit"][0]["artist"]["name"],
-                "album": release["title"],
-                "release_id": release["id"]
-            }
-
-
         import requests
 
         def get_cover_url(release_id):
@@ -461,36 +365,6 @@ def update_data():
             print("Brano non trovato")
             return ("")
 
-   
-    if copertina != old_copertina:
-      
-        background_url = get_background(title, artist, album)
-        bg_key = f"{artist}-{album}"
-   
-
-        if background_url and bg_key != current_background_key:
-            try:
-                r = requests.get(background_url, timeout=5)
-                if r.status_code == 200:
-                    pixmap = QPixmap()
-                    pixmap.loadFromData(r.content)
-
-                    if not pixmap.isNull():
-                        set_background_with_fade(pixmap)
-                        current_background_key = bg_key
-                        return
-            except Exception as e:
-                print("Errore background web:", e)
-
-        # fallback smooth
-        if current_background_key != "base":
-            set_base_background()
-            current_background_key = "base"
-
-
-        
-
-
     root.repaint()
     return artist, title, album, position, status, volume, duration;    
 
@@ -498,7 +372,7 @@ def rotate_cover():
     global current_angle, label_cover, status, cover_pixmap, copertina
     if cover_pixmap is None:
         return
-    if copertina == "Bluetooth":        
+    if copertina == "Bluetooth" or copertina == "File_web":        
         return
     if status != "Playing":
         return
