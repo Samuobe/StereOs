@@ -60,7 +60,7 @@ for lang in avaible_languages_temp:
     avaible_languages.append(lang.split("/")[2].split(".")[0])
 musicbrainzngs.set_useragent(
     "StereOsPlayer",        
-    "1.3",                 
+    "0.0.3",                 
     "https://github.com/Samuobe/StereOs"   
 )
 
