@@ -351,6 +351,8 @@ def update_data():
             return None
 
         def cerca_brano(titolo, artista=None, album=None):
+            if not titolo:
+                return
             query = titolo
             if artista:
                 query += f' AND artist:"{artista}"'
