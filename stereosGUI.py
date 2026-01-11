@@ -16,6 +16,27 @@ import requests
 from PyQt6.QtWidgets import QGraphicsOpacityEffect, QGraphicsBlurEffect
 from PyQt6.QtCore import QPropertyAnimation
 
+from PyQt6.QtCore import QObject, pyqtSignal, QThread
+
+class CoverWorker(QObject):
+    finished = pyqtSignal(QPixmap)  # ritorna la copertina scalata
+
+    def run(self, title, artist, album):
+        pixmap = None
+        try:
+            brano = cerca_brano(title, artist, album)
+            if brano:
+                cover_url = get_cover_url(brano["release_id"])
+                if cover_url:
+                    response = requests.get(cover_url, timeout=5)
+                    pixmap = QPixmap()
+                    pixmap.loadFromData(response.content)
+        except Exception as e:
+            print("Errore CoverWorker:", e)
+        self.finished.emit(pixmap)
+
+
+
 
 
 #Global vars
@@ -181,6 +202,49 @@ def generate_data_interface():
 
     root.repaint()
 
+
+def get_cover_url(release_id):
+    url = f"https://coverartarchive.org/release/{release_id}"
+    try:
+        r = requests.get(url, timeout=5)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        for img in data["images"]:
+            if img.get("front"):
+                return img["image"]
+    except Exception as e:
+        print("Errore get_cover_url:", e)
+    return None
+
+def cerca_brano(titolo, artista=None, album=None):
+    if not titolo:
+        return None
+    query = titolo
+    if artista:
+        query += f' AND artist:"{artista}"'
+    if album:
+        query += f' AND release:"{album}"'
+    try:
+        result = musicbrainzngs.search_recordings(query=query, limit=1)
+        if not result["recording-list"]:
+            return None
+        recording = result["recording-list"][0]
+        release = recording["release-list"][0]
+        return {
+            "titolo": recording["title"],
+            "artista": recording["artist-credit"][0]["artist"]["name"],
+            "album": release["title"],
+            "release_id": release["id"]
+        }
+    except Exception as e:
+        print("Errore cerca_brano:", e)
+        return None
+
+
+
+
+
 def update_data():
     global data_layout, label_cover
     global label_title_artist, label_title_title, label_title_album, label_title_status
@@ -320,85 +384,55 @@ def update_data():
             cover_pixmap.load(path)
 
     # Aggiorna QLabel della cover
-    if copertina != old_copertina:     
-        if not cover_pixmap.isNull():    
-            old_copertina = copertina
-            scaled_cover_pixmap = cover_pixmap.scaled(
-            128, 128,
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation
-        )
-        
-        cover_pixmap = scaled_cover_pixmap
-        label_cover.setPixmap(scaled_cover_pixmap)
-    
-
-        import requests
-
-        def get_cover_url(release_id):
-            url = f"https://coverartarchive.org/release/{release_id}"
-            r = requests.get(url)
-
-            if r.status_code != 200:
-                return None
-
-            data = r.json()
-
-            for img in data["images"]:
-                if img.get("front"):
-                    return img["image"]  # URL immagine
-
-            return None
-
-        def cerca_brano(titolo, artista=None, album=None):
-            if not titolo:
-                return
-            query = titolo
-            if artista:
-                query += f' AND artist:"{artista}"'
-            if album:
-                query += f' AND release:"{album}"'
-
-            result = musicbrainzngs.search_recordings(
-                query=query,
-                limit=1
-            )
-
-            if not result["recording-list"]:
-                return None
-
-            recording = result["recording-list"][0]
-
-            release = recording["release-list"][0]
-            
-            return {
-                "titolo": recording["title"],
-                "artista": recording["artist-credit"][0]["artist"]["name"],
-                "album": release["title"],
-                "release_id": release["id"]
-            }
-
-        brano = cerca_brano(
-            titolo=title,
-            artista=artist,
-            album=album
-        )
-
-        if brano:
-            cover_url = get_cover_url(brano["release_id"])
-            
-            print("Titolo:", brano["titolo"])
-            print("Artista:", brano["artista"])
-            print("Album:", brano["album"])
-            print("Copertina:", cover_url)
-
-            return cover_url
+    # Dopo aver letto artist/title/album da playerctl e settato label_data_...
+    if copertina != old_copertina:
+        if copertina == "Vlc":  # solo se è VLC, altrimenti iconette statiche
+            update_cover_thread(title, artist, album)
         else:
-            print("Brano non trovato")
-            return ("")
+            # cover fissa, no thread
+            path = os.path.join(os.path.dirname(__file__), "icons/no_media.png")
+            if copertina == "Music Assistant":
+                path = os.path.join(os.path.dirname(__file__), "icons/music_assistant.png")
+            elif copertina == "Bluetooth":
+                path = os.path.join(os.path.dirname(__file__), "icons/bluetooth.png")
+            cover_pixmap = QPixmap(path)
+            scaled_cover_pixmap = cover_pixmap.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio,
+                                                    Qt.TransformationMode.SmoothTransformation)
+            label_cover.setPixmap(scaled_cover_pixmap)
+            old_copertina = copertina
+
 
     root.repaint()
     return artist, title, album, position, status, volume, duration;    
+
+
+def update_cover_thread(title, artist, album):
+    global old_copertina
+    worker = CoverWorker()
+    thread = QThread()
+    worker.moveToThread(thread)
+
+    def finish_update(pixmap):
+        global cover_pixmap, scaled_cover_pixmap
+        if pixmap:
+            scaled_cover_pixmap = pixmap.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio,
+                                               Qt.TransformationMode.SmoothTransformation)
+            cover_pixmap = scaled_cover_pixmap
+            label_cover.setPixmap(scaled_cover_pixmap)
+            old_copertina = title + artist + album  # marca cover aggiornata
+        thread.quit()
+        thread.wait()
+
+    worker.finished.connect(finish_update)
+    thread.started.connect(lambda: worker.run(title, artist, album))
+    thread.start()
+
+
+
+
+
+
+
 
 def rotate_cover():
     global current_angle, label_cover, status, cover_pixmap, copertina
