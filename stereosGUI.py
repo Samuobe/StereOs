@@ -58,6 +58,11 @@ avaible_languages_temp = glob.glob(f"./lpak/*.lpak")
 avaible_languages = []
 for lang in avaible_languages_temp:
     avaible_languages.append(lang.split("/")[2].split(".")[0])
+musicbrainzngs.set_useragent(
+    "StereOsPlayer",        
+    "1.3",                 
+    "https://github.com/Samuobe/StereOs"   
+)
 
 def load_config():
     global language, bluetooth_default, data_dir
@@ -345,6 +350,31 @@ def update_data():
 
             return None
 
+        def cerca_brano(titolo, artista=None, album=None):
+            query = titolo
+            if artista:
+                query += f' AND artist:"{artista}"'
+            if album:
+                query += f' AND release:"{album}"'
+
+            result = musicbrainzngs.search_recordings(
+                query=query,
+                limit=1
+            )
+
+            if not result["recording-list"]:
+                return None
+
+            recording = result["recording-list"][0]
+
+            release = recording["release-list"][0]
+            
+            return {
+                "titolo": recording["title"],
+                "artista": recording["artist-credit"][0]["artist"]["name"],
+                "album": release["title"],
+                "release_id": release["id"]
+            }
 
         brano = cerca_brano(
             titolo=title,
@@ -496,7 +526,7 @@ app = pq.QApplication(sys.argv)
 root = pq.QMainWindow()
 root.showFullScreen()
 #root.showMaximized()
-set_base_background()
+
 
 #Update data timer 
 timer_data = QtCore.QTimer()
