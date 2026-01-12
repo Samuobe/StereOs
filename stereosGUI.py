@@ -386,7 +386,7 @@ def update_data():
     # Aggiorna QLabel della cover
     # Dopo aver letto artist/title/album da playerctl e settato label_data_...
     if copertina != old_copertina:
-        if copertina == "Vlc":  # solo se è VLC, altrimenti iconette statiche
+        if copertina == "Vlc" and old_copertina != "MusicBrainz":  # solo se è VLC, altrimenti iconette statiche
             update_cover_thread(title, artist, album)
         else:
             # cover fissa, no thread
@@ -413,15 +413,22 @@ def update_cover_thread(title, artist, album):
     worker.moveToThread(thread)
 
     def finish_update(pixmap):
-        global cover_pixmap, scaled_cover_pixmap
-        if pixmap:
-            scaled_cover_pixmap = pixmap.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio,
-                                               Qt.TransformationMode.SmoothTransformation)
+        global cover_pixmap, scaled_cover_pixmap, copertina, old_copertina
+        if pixmap and not pixmap.isNull():
+            scaled_cover_pixmap = pixmap.scaled(
+                128, 128,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
             cover_pixmap = scaled_cover_pixmap
             label_cover.setPixmap(scaled_cover_pixmap)
-            old_copertina = title + artist + album  # marca cover aggiornata
+
+            copertina = "MusicBrainz"   # ⭐ SEGNA CHE ORA È DA MB
+            old_copertina = "MusicBrainz"
+
         thread.quit()
         thread.wait()
+
 
     worker.finished.connect(finish_update)
     thread.started.connect(lambda: worker.run(title, artist, album))
@@ -438,7 +445,7 @@ def rotate_cover():
     global current_angle, label_cover, status, cover_pixmap, copertina
     if cover_pixmap is None:
         return
-    if copertina == "Bluetooth" or copertina == "File_web":        
+    if copertina == "Bluetooth" or copertina == "File_web" or copertina=="MusicBrainz":        
         return
     if status != "Playing":
         return
