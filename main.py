@@ -42,7 +42,7 @@ def check_cd_inserted():
         send_notify("Errore nella lettura del cd")
 
 def vlc_telnet():
-    os.system("systemctl --user stop mpris-scrobbler.service")
+    # Avvia VLC con interfaccia telnet
     subprocess.Popen([
         "cvlc","-I", "telnet","--telnet-password=ciao", "--telnet-port=4212","--extraintf", "http","--http-password=ciao"
     ])

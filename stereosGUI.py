@@ -63,6 +63,7 @@ old_copertina = None
 bluetooth_default = None
 current_angle = 0
 copertina = "Get"
+NEED_MB = False
 
 background_label = None
 background_opacity = None
@@ -364,14 +365,11 @@ def update_data():
                 cover_pixmap.load(path)
 
         except Exception:
-            if copertina == "No data":
-                default_path = os.path.join(os.path.dirname(__file__), "icons/no_media.png")
-                copertina = "No data"
-            else:
-                default_path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
-                copertina = "Default CD"
+            NEED_MB = True   # ⭐ SERVE MUSICBRAINZ
+            default_path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
+            copertina = "Default CD"
             cover_pixmap.load(default_path)
-            default_image_status = True
+
     else:
         if copertina == "Music Assistant":
             path = os.path.join(os.path.dirname(__file__), "icons/music_assistant.png")
