@@ -1,7 +1,7 @@
 import PyQt6.QtWidgets as pq
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap, QTransform, QPainter, QPainterPath
-from PyQt6 import QtCore
+from PySide6 import QtCore
 import sys
 import subprocess
 import os
@@ -9,34 +9,6 @@ import library.lpak as lpak
 import glob
 import threading
 import time
-
-import musicbrainzngs
-import requests
-
-from PyQt6.QtWidgets import QGraphicsOpacityEffect, QGraphicsBlurEffect
-from PyQt6.QtCore import QPropertyAnimation
-
-from PyQt6.QtCore import QObject, pyqtSignal, QThread
-
-class CoverWorker(QObject):
-    finished = pyqtSignal(QPixmap)  # ritorna la copertina scalata
-
-    def run(self, title, artist, album):
-        pixmap = None
-        try:
-            brano = cerca_brano(title, artist, album)
-            if brano:
-                cover_url = get_cover_url(brano["release_id"])
-                if cover_url:
-                    response = requests.get(cover_url, timeout=5)
-                    pixmap = QPixmap()
-                    pixmap.loadFromData(response.content)
-        except Exception as e:
-            print("Errore CoverWorker:", e)
-        self.finished.emit(pixmap)
-
-
-
 
 
 #Global vars
@@ -63,28 +35,12 @@ old_copertina = None
 bluetooth_default = None
 current_angle = 0
 copertina = "Get"
-NEED_MB = False
-
-background_label = None
-background_opacity = None
-background_anim = None
-
-BASE_BACKGROUND = os.path.join(
-    os.path.dirname(__file__),
-    "icons/background_base.png"
-)
-
 
 #Auto set variable
 avaible_languages_temp = glob.glob(f"./lpak/*.lpak")
 avaible_languages = []
 for lang in avaible_languages_temp:
     avaible_languages.append(lang.split("/")[2].split(".")[0])
-musicbrainzngs.set_useragent(
-    "StereOsPlayer",        
-    "0.0.3",                 
-    "https://github.com/Samuobe/StereOs"   
-)
 
 def load_config():
     global language, bluetooth_default, data_dir
@@ -150,7 +106,6 @@ def def_styles():
             }
         """
 
-
 def generate_data_interface():
     global data_layout, label_cover
     global label_title_artist, label_title_title, label_title_album, label_title_status
@@ -202,49 +157,6 @@ def generate_data_interface():
     data_layout.setContentsMargins(20, 0, 20, 0)  # margini extra
 
     root.repaint()
-
-
-def get_cover_url(release_id):
-    url = f"https://coverartarchive.org/release/{release_id}"
-    try:
-        r = requests.get(url, timeout=5)
-        if r.status_code != 200:
-            return None
-        data = r.json()
-        for img in data["images"]:
-            if img.get("front"):
-                return img["image"]
-    except Exception as e:
-        print("Errore get_cover_url:", e)
-    return None
-
-def cerca_brano(titolo, artista=None, album=None):
-    if not titolo:
-        return None
-    query = titolo
-    if artista:
-        query += f' AND artist:"{artista}"'
-    if album:
-        query += f' AND release:"{album}"'
-    try:
-        result = musicbrainzngs.search_recordings(query=query, limit=1)
-        if not result["recording-list"]:
-            return None
-        recording = result["recording-list"][0]
-        release = recording["release-list"][0]
-        return {
-            "titolo": recording["title"],
-            "artista": recording["artist-credit"][0]["artist"]["name"],
-            "album": release["title"],
-            "release_id": release["id"]
-        }
-    except Exception as e:
-        print("Errore cerca_brano:", e)
-        return None
-
-
-
-
 
 def update_data():
     global data_layout, label_cover
@@ -303,7 +215,7 @@ def update_data():
             label_data_artist.setText(artist)
             label_data_title.setText(title)
             label_data_album.setText(album)
-            label_data_status.setText(lpak.get(status, language))
+            label_data_status.setText(status)
 
             label_title_artist.setStyleSheet(data_title_styles)
             label_title_title.setStyleSheet(data_title_styles)
@@ -365,11 +277,14 @@ def update_data():
                 cover_pixmap.load(path)
 
         except Exception:
-            NEED_MB = True   # ⭐ SERVE MUSICBRAINZ
-            default_path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
-            copertina = "Default CD"
+            if copertina == "No data":
+                default_path = os.path.join(os.path.dirname(__file__), "icons/no_media.png")
+                copertina = "No data"
+            else:
+                default_path = os.path.join(os.path.dirname(__file__), "icons/default_cd.png")
+                copertina = "Default CD"
             cover_pixmap.load(default_path)
-
+            default_image_status = True
     else:
         if copertina == "Music Assistant":
             path = os.path.join(os.path.dirname(__file__), "icons/music_assistant.png")
@@ -377,75 +292,34 @@ def update_data():
         elif copertina == "Bluetooth":
             path = os.path.join(os.path.dirname(__file__), "icons/bluetooth.png")
             cover_pixmap.load(path)
-        elif copertina == "MusicBrainz":
-            pass
         else:
             path = os.path.join(os.path.dirname(__file__), "icons/no_media.png")
             cover_pixmap.load(path)
 
     # Aggiorna QLabel della cover
-    # Dopo aver letto artist/title/album da playerctl e settato label_data_...
-    if copertina != old_copertina and copertina != "MusicBrainz":
-        if copertina == "Vlc" and old_copertina != "MusicBrainz":  # solo se è VLC, altrimenti iconette statiche
-            update_cover_thread(title, artist, album)
-        else:
-            # cover fissa, no thread
-            path = os.path.join(os.path.dirname(__file__), "icons/no_media.png")
-            if copertina == "Music Assistant":
-                path = os.path.join(os.path.dirname(__file__), "icons/music_assistant.png")
-            elif copertina == "Bluetooth":
-                path = os.path.join(os.path.dirname(__file__), "icons/bluetooth.png")
-            cover_pixmap = QPixmap(path)
-            scaled_cover_pixmap = cover_pixmap.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio,
-                                                    Qt.TransformationMode.SmoothTransformation)
-            label_cover.setPixmap(scaled_cover_pixmap)
+    if copertina != old_copertina:     
+        if not cover_pixmap.isNull():    
             old_copertina = copertina
+            scaled_cover_pixmap = cover_pixmap.scaled(
+            128, 128,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation
+        )
+        
+        cover_pixmap = scaled_cover_pixmap
+        label_cover.setPixmap(scaled_cover_pixmap)
+    
+        
 
 
     root.repaint()
     return artist, title, album, position, status, volume, duration;    
 
-
-def update_cover_thread(title, artist, album):
-    global old_copertina
-    worker = CoverWorker()
-    thread = QThread()
-    worker.moveToThread(thread)
-
-    def finish_update(pixmap):
-        global cover_pixmap, scaled_cover_pixmap, copertina, old_copertina
-        if pixmap and not pixmap.isNull():
-            scaled_cover_pixmap = pixmap.scaled(
-                128, 128,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation
-            )
-            cover_pixmap = scaled_cover_pixmap
-            label_cover.setPixmap(scaled_cover_pixmap)
-
-            copertina = "MusicBrainz"   # ⭐ SEGNA CHE ORA È DA MB
-            old_copertina = "MusicBrainz"
-
-        thread.quit()
-        thread.wait()
-
-
-    worker.finished.connect(finish_update)
-    thread.started.connect(lambda: worker.run(title, artist, album))
-    thread.start()
-
-
-
-
-
-
-
-
 def rotate_cover():
     global current_angle, label_cover, status, cover_pixmap, copertina
     if cover_pixmap is None:
         return
-    if copertina == "Bluetooth" or copertina == "File_web" or copertina=="MusicBrainz":        
+    if copertina == "Bluetooth":        
         return
     if status != "Playing":
         return
@@ -569,7 +443,6 @@ app = pq.QApplication(sys.argv)
 root = pq.QMainWindow()
 root.showFullScreen()
 #root.showMaximized()
-
 
 #Update data timer 
 timer_data = QtCore.QTimer()
