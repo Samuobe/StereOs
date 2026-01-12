@@ -379,13 +379,15 @@ def update_data():
         elif copertina == "Bluetooth":
             path = os.path.join(os.path.dirname(__file__), "icons/bluetooth.png")
             cover_pixmap.load(path)
+        elif copertina == "MusicBrainz":
+            pass
         else:
             path = os.path.join(os.path.dirname(__file__), "icons/no_media.png")
             cover_pixmap.load(path)
 
     # Aggiorna QLabel della cover
     # Dopo aver letto artist/title/album da playerctl e settato label_data_...
-    if copertina != old_copertina:
+    if copertina != old_copertina and copertina != "MusicBrainz":
         if copertina == "Vlc" and old_copertina != "MusicBrainz":  # solo se è VLC, altrimenti iconette statiche
             update_cover_thread(title, artist, album)
         else:
